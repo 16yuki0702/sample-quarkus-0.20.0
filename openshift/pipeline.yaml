@@ -1,0 +1,108 @@
+kind: "BuildConfig"
+apiVersion: "v1"
+metadata:
+  name: "quarkus-sample-pipeline"
+spec:
+  strategy:
+    type: JenkinsPipeline
+    jenkinsPipelineStrategy:
+      jenkinsfile: |-
+        def repositoryPath = 'https://github.com/16yuki0702/sample-quarkus-0.20.0.git'
+        def appName = 'quarkus-app'
+        pipeline {
+            agent {
+                label 'maven'
+            }
+            options {
+                timeout(time: 30, unit: 'MINUTES')
+            }
+            stages {
+                stage('preamble') {
+                    steps {
+                        script {
+                            openshift.withCluster() {
+                                openshift.withProject() {
+                                    echo "Using project: ${openshift.project()}"
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('create image builder') {
+                    when {
+                        expression {
+                            openshift.withProject() {
+                                return !openshift.selector("bc", "${appName}").exists()
+                            }
+                        }
+                    }
+                    steps {
+                        script {
+                            openshift.withCluster() {
+                                openshift.withProject() {
+                                    openshift.newBuild("${repositoryPath}", "--strategy=docker", "--name=${appName}")
+                                }
+                            }
+                        } // script
+                    } // steps
+                } // stage
+                stage('build') {
+                    steps {
+                        script {
+                            openshift.withCluster() {
+                                openshift.withProject() {
+                                    while (!openshift.selector("istag", "ubi-minimal:latest").exists()) {
+                                        echo "wait downloading ubi-minimal finished..."
+                                        sleep(1)
+                                    }
+                                    openshift.startBuild("${appName}", "--wait", "--follow")
+                                }
+                            }
+                        } // script
+                    } // steps
+                } // stage
+                stage('deploy') {
+                    steps {
+                        script {
+                            openshift.withCluster() {
+                                openshift.withProject() {
+                                    openshift.newApp("${appName}")
+                                }
+                            }
+                        } // script
+                    } // steps
+                } // stage
+                stage('deploy complete') {
+                    steps {
+                        script {
+                            openshift.withCluster() {
+                                openshift.withProject() {
+                                    def rm = openshift.selector("dc", "${appName}").rollout()
+                                    openshift.selector("dc", "${appName}").related('pods').untilEach(1) {
+                                        return (it.object().status.phase == "Running")
+                                    }
+                                }
+                            }
+                        } // script
+                    } // steps
+                } // stage
+                stage('expose service') {
+                    when {
+                        expression {
+                            openshift.withProject() {
+                                return !openshift.selector("route", "${appName}").exists()
+                            }
+                        }
+                    }
+                    steps {
+                        script {
+                            openshift.withCluster() {
+                                openshift.withProject() {
+                                    openshift.expose("svc", "${appName}")
+                                }
+                            }
+                        } // script
+                    } // steps
+                } // stage
+            } // stages
+        } // pipeline
