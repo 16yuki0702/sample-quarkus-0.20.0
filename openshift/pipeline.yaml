@@ -61,7 +61,14 @@ spec:
                         } // script
                     } // steps
                 } // stage
-                stage('deploy') {
+                stage('create application') {
+                    when {
+                        expression {
+                            openshift.withProject() {
+                                return !openshift.selector("dc", "${appName}").exists()
+                            }
+                        }
+                    }
                     steps {
                         script {
                             openshift.withCluster() {
@@ -72,7 +79,7 @@ spec:
                         } // script
                     } // steps
                 } // stage
-                stage('deploy complete') {
+                stage('deploy') {
                     steps {
                         script {
                             openshift.withCluster() {
