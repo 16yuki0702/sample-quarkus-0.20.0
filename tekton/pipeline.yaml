@@ -1,0 +1,32 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: sample-pipeline
+spec:
+  resources:
+  - name: app-source
+    type: git
+  - name: app-image
+    type: image
+  tasks:
+  - name: build
+    taskRef:
+      name: build-and-push
+    params:
+    - name: TLSVERIFY
+      value: "false"
+    resources:
+      inputs:
+      - name: source
+        resource: app-source
+      outputs:
+      - name: image
+        resource: app-image
+  - name: deploy
+    taskRef:
+      name: oc
+    runAfter:
+      - build
+    params:
+    - name: ARGS
+      value: "rollout latest quarkus-app"
