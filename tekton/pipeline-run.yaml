@@ -6,8 +6,6 @@ metadata:
 spec:
   pipelineRef:
     name: sample-pipeline
-  trigger:
-    type: manual
   serviceAccount: 'pipeline'
   resources:
   - name: app-source
