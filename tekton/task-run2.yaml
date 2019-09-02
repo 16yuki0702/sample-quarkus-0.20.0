@@ -1,0 +1,11 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: sample-task-run2
+spec:
+  taskRef:
+    name: oc
+  inputs:
+    params:
+    - name: ARGS
+      value: "get project"
