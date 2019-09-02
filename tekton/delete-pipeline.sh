@@ -3,6 +3,7 @@
 oc delete route quarkus-app
 oc delete dc quarkus-app
 oc delete svc quarkus-app
+oc delete is quarkus-app
 
 oc delete pipeline sample-pipeline
 oc delete pipelinerun sample-pipeline-run
