@@ -13,7 +13,7 @@ spec:
     image: quay.io/openshift-pipeline/openshift-cli:latest
     command: ["/usr/local/bin/oc"]
     args:
-      - "${inputs.params.ARGS}"
+      - "$(inputs.params.ARGS)"
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: Task
@@ -36,7 +36,7 @@ spec:
   - name: build
     image: quay.io/buildah/stable
     workingdir: /workspace/source
-    command: ['buildah', 'bud', '--tls-verify=${inputs.params.TLSVERIFY}', '--layers', '-f', '.', '-t', '${outputs.resources.image.url}', '.']
+    command: ['buildah', 'bud', '--tls-verify=$(inputs.params.TLSVERIFY)', '--layers', '-f', '.', '-t', '$(outputs.resources.image.url)', '.']
     volumeMounts:
     - name: varlibcontainers
       mountPath: /var/lib/containers
@@ -44,7 +44,7 @@ spec:
       privileged: true
   - name: push
     image: quay.io/buildah/stable
-    command: ['buildah', 'push', '--tls-verify=${inputs.params.TLSVERIFY}', '${outputs.resources.image.url}', 'docker://${outputs.resources.image.url}']
+    command: ['buildah', 'push', '--tls-verify=$(inputs.params.TLSVERIFY)', '$(outputs.resources.image.url)', 'docker://$(outputs.resources.image.url)']
     volumeMounts:
     - name: varlibcontainers
       mountPath: /var/lib/containers
