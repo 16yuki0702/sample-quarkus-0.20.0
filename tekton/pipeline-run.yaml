@@ -6,7 +6,7 @@ metadata:
 spec:
   pipelineRef:
     name: sample-pipeline
-  serviceAccount: 'pipeline'
+  serviceAccountName: 'pipeline'
   resources:
   - name: app-source
     resourceRef:
